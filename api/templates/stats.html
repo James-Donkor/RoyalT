@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block content %}
+  
+<div class="flex min-h-screen bg-gray-100">
+
+  <!-- Sidebar Song Catalogue -->
+  <aside class="w-1/4 bg-white border-r shadow p-4">
+    <h2 class="text-lg font-semibold mb-4">Song Catalogue</h2>
+    <ul class="space-y-2">
+        <li class="cursor-pointer hover:text-purple-600" data-isrc="US1020000012">Crazy in Love – Beyoncé</li>
+        <li class="cursor-pointer hover:text-purple-600" data-isrc="USUM70001364">Thriller – Michael Jackson</li>
+        <!-- Add more with real ISRCs -->
+    </ul>
+  </aside>
+
+  <!-- Main Graph Panel -->
+  <main class="flex-1 p-6 relative">
+
+    <!-- Top Controls -->
+    <div class="flex justify-between items-center mb-4">
+      <!-- View Mode Toggle -->
+      <div class="flex space-x-2 mode-toggle">
+        <button class="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700">Real-Time</button>
+        <button class="bg-gray-300 text-gray-700 px-3 py-1 rounded hover:bg-gray-400">Predictive</button>
+      </div>
+      
+
+      <!-- Time Range Dropdown -->
+      <div class="relative">
+        <select id="timeRange" class="rounded px-2 py-1 border">
+          <option value="2d">2 Days</option>
+          <option value="1m">1 Month</option>
+          <option value="6m">6 Months</option>
+          <option value="1y">1 Year</option>
+          <option value="2y">2 Years</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Axis Variable Dropdown -->
+    <div class="mb-4">
+      <label class="mr-2 font-medium">Y-Axis:</label>
+      <select class="border rounded px-3 py-1">
+        <option>Income Over Time</option>
+        <option>Streams Over Time</option>
+        <option>Income Predicted from Streams</option>
+      </select>
+    </div>
+
+    <!-- Axis Labels -->
+    <div id="xLabel" class="absolute bottom-2 left-1/2 text-sm opacity-0 transition-opacity duration-500">Date</div>
+    <div id="yLabel" class="absolute top-1/2 left-0 text-sm -rotate-90 opacity-0 transition-opacity duration-500">Income ($)</div>  
+
+    <!-- Chart -->
+    <!-- Chart -->
+    <div class="chart-container bg-white p-4 rounded shadow max-h-[26rem] relative overflow-hidden">
+
+
+      <canvas id="statsChart" class="w-full h-full"></canvas>
+    </div>
+
+
+    <!-- Prediction Box (Bottom Right) -->
+    <div class="mt-4 ml-auto bg-white border p-3 rounded shadow w-64">
+
+      <label class="block text-sm font-medium mb-1">Predict income from streams</label>
+      <input type="number" id="predictionInput" class="border px-2 py-1 w-full" placeholder="e.g. 10000" />
+      <p id="predictionResult" class="mt-2 text-sm text-gray-700 font-medium"></p>
+    </div>
+    
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('statsChart').getContext('2d');
+  const xLabel = document.getElementById('xLabel');
+  const yLabel = document.getElementById('yLabel');
+  const modeButtons = document.querySelectorAll('.mode-toggle button');
+  const yAxisSelect = document.querySelector('select');
+  const predictionInput = document.querySelector('#predictionInput');
+  const predictionResult = document.querySelector('#predictionResult');
+  const chartWrapper = document.querySelector('.chart-container');
+
+  let currentMode = 'real'; // or 'predictive'
+
+  const generateLabels = (range) => {
+    switch (range) {
+      case '2d': return ['Day 1', 'Day 2'];
+      case '1m': return Array.from({ length: 30 }, (_, i) => `${i + 1}`);
+      case '6m': return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      case '1y': return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      case '2y': return ['Y1-Jan', 'Y1-Jul', 'Y2-Jan', 'Y2-Jul'];
+      default: return [];
+    }
+  };
+
+  const generateData = (range, maxVal) => {
+    const factor = maxVal / 10000;
+    switch (range) {
+      case '2d': return [100, 200].map(v => v * factor);
+      case '1m': return Array.from({ length: 30 }, () => Math.floor(Math.random() * 500 * factor));
+      case '6m': return [500, 700, 650, 900, 1000, 1100].map(v => v * factor);
+      case '1y': return [800, 1200, 1500, 1700, 1900, 2100, 2300, 2500, 2700, 2900, 3100, 3300].map(v => v * factor);
+      case '2y': return [4000, 4200, 4600, 4900].map(v => v * factor);
+      default: return [];
+    }
+  };
+
+  const chartData = {
+    labels: generateLabels('2d'),
+    datasets: [{
+      label: 'Income',
+      data: generateData('2d', 10000),
+      backgroundColor: 'rgba(99, 102, 241, 0.2)',
+      borderColor: 'rgba(99, 102, 241, 1)',
+      borderWidth: 2,
+      tension: 0.3
+    }]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    scales: {
+      x: {
+        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 }
+      },
+      y: {
+        beginAtZero: true
+      }
+    },
+    plugins: {
+      legend: { display: true }
+    }
+  };
+
+  const statsChart = new Chart(ctx, {
+    type: 'line',
+    data: chartData,
+    options: chartOptions
+  });
+
+  function updateChart(range, maxVal = 10000) {
+  const isIncome = yAxisSelect.value === 'Income Over Time';
+  chartData.labels = generateLabels(range);
+  chartData.datasets[0].data = generateData(range, maxVal);
+
+  // Update label and axis
+  yLabel.textContent = isIncome ? 'Income ($)' : 'Streams';
+  chartData.datasets[0].label = isIncome ? 'Income' : 'Streams';
+  xLabel.textContent = range.includes("y") ? "Month" : "Day";
+
+  statsChart.update();
+}
+
+
+  document.getElementById('timeRange').addEventListener('change', (e) => {
+    updateChart(e.target.value);
+  });
+
+  yAxisSelect.addEventListener('change', () => {
+    updateChart(document.getElementById('timeRange').value);
+  });
+
+  modeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentMode = btn.textContent.toLowerCase().includes("predictive") ? "predictive" : "real";
+
+      modeButtons.forEach(b => b.classList.remove('bg-purple-600', 'text-white'));
+      btn.classList.add('bg-purple-600', 'text-white');
+
+      if (currentMode === "predictive") {
+        chartWrapper.classList.add("grayscale", "opacity-60");
+        predictionInput.parentElement.classList.remove("hidden");
+      } else {
+        chartWrapper.classList.remove("grayscale", "opacity-60");
+        predictionInput.parentElement.classList.add("hidden");
+        predictionResult.textContent = "";
+      }
+    });
+  });
+
+  predictionInput.addEventListener('input', () => {
+    const streams = parseInt(predictionInput.value) || 0;
+    const rate = 0.004; // average per-stream payout
+    const estimated = (streams * rate).toFixed(2);
+    predictionResult.textContent = `Estimated Income: $${estimated}`;
+  });
+
+  // Initial fade-in
+  setTimeout(() => {
+    xLabel.classList.remove('opacity-0');
+    yLabel.classList.remove('opacity-0');
+  }, 500);
+</script>
+
+<style>
+#yLabel {
+  transform: rotate(-90deg) translateY(-50%);
+  transform-origin: left center;
+}
+
+</style>
+
+{% endblock %}

@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Thread #{{ thread_id }} – MixInbox{% endblock %}
+
+{% block content %}
+
+<div class="flex min-h-screen bg-[#F4F3FF]">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-[#2F2D52] text-white flex flex-col border-r border-[#3C3A5B]">
+    <div class="px-6 py-4 text-2xl font-bold border-b border-[#3C3A5B]">MixInbox</div>
+    <ul class="flex-1 overflow-y-auto space-y-2 mt-4 px-4">
+      <li><a href="/messages" class="block text-sm text-[#B5B3D0] hover:text-white">← Back to Threads</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Thread Content -->
+  <main class="flex-1 flex flex-col justify-between">
+    <div class="p-6 border-b bg-white shadow flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold text-purple-800">Thread #{{ thread_id }}</h1>
+        <p class="text-sm text-gray-500">Conversation details</p>
+      </div>
+      <div class="text-gray-400 hover:text-gray-600 text-xl cursor-pointer" onclick="toggleOfferPanel()">&#8942;</div>
+    </div>
+
+    <!-- Messages List -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-4">
+      {% for message in messages %}
+      <div class="flex {% if message.from == 'You' %}justify-end{% else %}justify-start{% endif %}">
+        <div class="max-w-md bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div class="font-semibold text-purple-700 mb-1">{{ message.from }}</div>
+
+          {% if message.is_offer and message.offer_data %}
+            <button 
+              onclick='openDealModal(JSON.parse("{{ message.offer_data|escapejs }}"))' 
+              class="w-full text-left px-4 py-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition"
+            >
+              📄 View Deal Offer
+            </button>
+          {% else %}
+            <div class="text-gray-800">{{ message.text }}</div>
+          {% endif %}
+
+          {% if message.audio_url %}
+            <button 
+              onclick="playAudio('{{ message.audio_url|urlencode }}', '{{ message.from }}')"
+              class="text-purple-600 hover:text-purple-800 mt-2 flex items-center space-x-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 fill-current" viewBox="0 0 20 20">
+                <path d="M9 7a1 1 0 00-1 1v4a1 1 0 001.6.8l3.5-2a1 1 0 000-1.6l-3.5-2A1 1 0 009 7z" />
+              </svg>
+              <span class="text-sm font-medium">Play Audio</span>
+            </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Message Input -->
+    <div class="p-4 border-t bg-white">
+      <form action="#" method="post" class="flex items-center gap-3">
+        {% csrf_token %}
+        <input type="hidden" name="is_offer" value="false" id="is_offer_flag" />
+        <input type="hidden" name="offer_json" id="offer_json" />
+    
+        <input type="text" name="message" placeholder="Type your message..." class="flex-1 px-4 py-2 border rounded-lg shadow-sm focus:outline-none" />
+        
+        <!-- Ellipses Button -->
+        <button 
+          type="button"
+          onclick="toggleOfferPanel()"
+          class="text-gray-500 hover:text-gray-700 text-2xl px-2"
+          title="Create a Deal Offer"
+        >
+          ⋯
+        </button>
+    
+        <!-- Send Button -->
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
+          Send
+        </button>
+      </form>
+    </div>
+    
+
+<!-- 💼 Offer Deal Modal (Dynamic) -->
+<div id="dealModal" class="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+  <div class="bg-white w-[500px] rounded-xl shadow-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
+    <button onclick="closeDealModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+    <h3 class="text-xl font-bold text-purple-700 mb-4">📄 Offer Details</h3>
+    <ul id="dealDetailsList" class="text-sm text-gray-700 space-y-2"></ul>
+  </div>
+</div>
+
+<!-- 💼 Slide-In Offer Panel Form -->
+<div 
+  id="offerPanel" 
+  class="fixed top-0 right-0 w-[400px] h-full bg-white shadow-lg px-6 py-8 overflow-y-auto hidden z-40"
+>
+  <span 
+    class="text-gray-500 cursor-pointer text-xl float-right" 
+    onclick="toggleOfferPanel()"
+  >✕</span>
+
+  <h2 class="text-2xl font-bold text-purple-700 mb-6">Make an Offer</h2>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="is_offer" value="1" />
+
+    <label class="font-semibold">💵 Base Pay</label>
+    <input name="base_pay" type="number" class="w-full mt-2 mb-4 p-2 border rounded" placeholder="Flat fee (USD)" />
+
+    <label class="font-semibold">📀 Master Royalties (%)</label>
+    <input name="master_royalties" type="range" min="0" max="100" value="10" class="w-full" />
+
+    <label class="font-semibold">✍️ Publishing Royalties (%)</label>
+    <input name="publishing_royalties" type="range" min="0" max="100" value="0" class="w-full" />
+
+    <label class="font-semibold">🎯 Bonus Clause</label>
+    <input name="bonus_clause" type="text" class="w-full mt-2 p-2 border rounded" placeholder="e.g. $500 if song hits 1M streams" />
+
+    <label class="font-semibold">🎤 Performance Royalties</label>
+    <input name="performance_royalties" type="text" class="w-full mt-2 p-2 border rounded" placeholder="e.g. $50 per live show" />
+
+    <label class="font-semibold">🛠️ Backend Points (%)</label>
+    <input name="backend_points" type="range" min="0" max="100" value="5" class="w-full" />
+
+    <label class="font-semibold">📆 Term (Years)</label>
+    <input name="term_years" type="number" value="5" class="w-full mt-2 p-2 border rounded" />
+
+    <label class="font-semibold">🌍 Territory</label>
+    <input name="territory" type="text" class="w-full mt-2 p-2 border rounded" placeholder="Global / Digital / US only" />
+
+    <label class="font-semibold">🎥 Usage Rights</label>
+    <input name="usage_rights" type="text" class="w-full mt-2 p-2 border rounded" placeholder="e.g. Sync, Commercial, YouTube" />
+
+    <label class="font-semibold">✏️ Credit Format</label>
+    <input name="credit_format" type="text" class="w-full mt-2 p-2 border rounded" placeholder="e.g. Mixed by James Donkor" />
+
+    <label class="font-semibold">🔁 Revisions Allowed</label>
+    <input name="revisions_allowed" type="number" value="3" class="w-full mt-2 p-2 border rounded" />
+
+    <label class="font-semibold">🕒 Delivery Timeline (days)</label>
+    <input name="delivery_timeline" type="number" value="7" class="w-full mt-2 p-2 border rounded" />
+
+    <label class="font-semibold">🛒 Buyout Option (USD)</label>
+    <input name="buyout_option" type="number" class="w-full mt-2 p-2 border rounded" placeholder="e.g. $1000 for all rights" />
+
+    <label class="font-semibold">🛡️ Indemnity Notes</label>
+    <input name="indemnity_notes" type="text" class="w-full mt-2 p-2 border rounded" placeholder="Optional legal notes" />
+    <script>
+      function formatOfferSummary() {
+        const fields = [
+          ["Base Pay", "base_pay"],
+          ["Master Royalties", "master_royalties"],
+          ["Publishing Royalties", "publishing_royalties"],
+          ["Bonus", "bonus_clause"],
+          ["Performance Royalties", "performance_royalties"],
+          ["Backend Points", "backend_points"],
+          ["Term (Years)", "term_years"],
+          ["Territory", "territory"],
+          ["Usage Rights", "usage_rights"],
+          ["Credits", "credit_format"],
+          ["Revisions", "revisions_allowed"],
+          ["Delivery (days)", "delivery_timeline"],
+          ["Buyout", "buyout_option"],
+          ["Indemnity", "indemnity_notes"]
+        ];
+    
+        let summary = "📄 New Offer Sent:\n";
+        for (const [label, name] of fields) {
+          const value = document.querySelector(`[name="${name}"]`).value;
+          if (value) {
+            summary += `• ${label}: ${value}\n`;
+          }
+        }
+    
+        // Fill the chat box
+        document.querySelector('input[name="message"]').value = summary.trim();
+      }
+    </script>
+    
+    <!-- Add this attribute to your Send Offer button -->
+    <button type="button"
+      onclick="insertOfferSummaryAndClose()"
+      class="mt-6 w-full bg-purple-700 text-white py-2 rounded hover:bg-purple-800 transition">
+      📩 Insert Deal in Chat
+    </button>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const labelMap = {
+    base_pay: "Base Pay (USD)",
+    master_royalties: "Master Royalties (%)",
+    publishing_royalties: "Publishing Royalties (%)",
+    bonus_clause: "Bonus Clause",
+    performance_royalties: "Performance Royalties",
+    backend_points: "Backend Points (%)",
+    term_years: "Term (Years)",
+    territory: "Territory",
+    usage_rights: "Usage Rights",
+    credit_format: "Credit Format",
+    revisions_allowed: "Revisions Allowed",
+    delivery_timeline: "Delivery Timeline (days)",
+    buyout_option: "Buyout Option (USD)",
+    indemnity_notes: "Indemnity Notes"
+  };
+
+
+  function openDealModal(offerData) {
+    const list = document.getElementById("dealDetailsList");
+    list.innerHTML = "";
+    for (const key in offerData) {
+      const label = labelMap[key] || key;
+      const value = offerData[key] || "—";
+      const item = document.createElement("li");
+      item.innerHTML = `<strong>${label}:</strong> ${value}`;
+      list.appendChild(item);
+    }
+    document.getElementById("dealModal").classList.remove("hidden");
+  }
+
+  function closeDealModal() {
+    document.getElementById("dealModal").classList.add("hidden");
+  }
+
+  function toggleOfferPanel() {
+    document.getElementById("offerPanel").classList.toggle("hidden");
+  }
+  function playAudio(audioUrl, senderName) {
+    const audio = new Audio(audioUrl);
+    audio.play().catch(err => {
+      console.error("Audio playback failed:", err);
+      alert("Could not play audio.");
+  });
+}
+
+function simulateOfferPreview(event) {
+  event.preventDefault(); // Stop default submit
+
+  // Preview the deal message (optional)
+  const messageContainer = document.querySelector(".overflow-y-auto");
+  const dealElement = document.createElement("div");
+
+  dealElement.className = "flex justify-end";
+  dealElement.innerHTML = `
+    <div class="max-w-md bg-white rounded-lg shadow p-4 border border-gray-200">
+      <div class="font-semibold text-purple-700 mb-1">You</div>
+      <button 
+        onclick='openDealModal(${JSON.stringify(getOfferFormData()).replace(/'/g, "\\'")})'
+        class="w-full text-left px-4 py-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition"
+      >
+        📄 View Deal Offer
+      </button>
+    </div>
+  `;
+  messageContainer.appendChild(dealElement);
+
+  // Remove the listener to prevent recursion, then submit
+  const form = event.target;
+  form.removeEventListener('submit', simulateOfferPreview);
+  form.submit(); // Submit the form only once
+}
+
+function getOfferFormData() {
+  const form = document.querySelector('#offerPanel form');
+  const data = {};
+  for (const [key, val] of new FormData(form).entries()) {
+    if (key !== 'csrfmiddlewaretoken' && key !== 'is_offer') {
+      data[key] = val;
+    }
+  }
+  return data;
+}
+
+// Attach listener once DOM is ready
+// document.addEventListener("DOMContentLoaded", () => {
+//   const offerForm = document.querySelector('#offerPanel form');
+//   if (offerForm) {
+//     offerForm.addEventListener('submit', simulateOfferPreview);
+//   }
+// });
+
+function insertOfferSummaryAndClose() {
+  console.log("📨 insertOfferSummaryAndClose triggered");
+  const fields = [
+    ["Base Pay", "base_pay"],
+    ["Master Royalties", "master_royalties"],
+    ["Publishing Royalties", "publishing_royalties"],
+    ["Bonus", "bonus_clause"],
+    ["Performance Royalties", "performance_royalties"],
+    ["Backend Points", "backend_points"],
+    ["Term (Years)", "term_years"],
+    ["Territory", "territory"],
+    ["Usage Rights", "usage_rights"],
+    ["Credits", "credit_format"],
+    ["Revisions", "revisions_allowed"],
+    ["Delivery (days)", "delivery_timeline"],
+    ["Buyout", "buyout_option"],
+    ["Indemnity", "indemnity_notes"]
+  ];
+
+  let summary = "🎛️ New Deal Offer:\n";
+  let offerData = {};
+
+  for (const [label, name] of fields) {
+    const value = document.querySelector(`[name="${name}"]`).value;
+    if (value) {
+      summary += `• ${label}: ${value}\n`;
+      offerData[name] = value;
+    }
+  }
+
+      // ✅ Add this check right after constructing offerData
+      if (Object.keys(offerData).length === 0) {
+      alert("No offer data detected — did you fill out the fields?");
+      return;
+  }
+
+  const messageInput = document.querySelector('input[name="message"]');
+  messageInput.value = summary.trim();
+  document.getElementById("is_offer_flag").value = "true";
+  document.getElementById("offer_json").value = JSON.stringify(offerData);
+
+  toggleOfferPanel(); // Close panel
+}
+
+
+
+
+
+</script>
+{% endblock %}

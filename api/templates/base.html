@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}MixDeal{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    // Extend Tailwind config for purple theme if needed
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#5a4c9d',  // Custom purple
+            soft: '#e6e6ff',     // Your light purple background
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gradient-to-r from-[#f4f4f8] to-[#e6e6fa] text-gray-900 min-h-screen flex flex-col font-inter">
+
+<!-- 🔥 Top Navigation Bar -->
+<nav class="bg-white shadow px-10 py-4 relative flex items-center text-sm tracking-[0.05em] font-light">
+
+  <!-- Centered Nav Links -->
+  <ul class="absolute left-1/2 transform -translate-x-1/2 flex space-x-24">
+    <li>
+      <a href="/browse" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+        Browse
+      </a>
+    </li>
+    <li>
+      <a href="/messages" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+        Messages
+      </a>
+    </li>
+    <li>
+      <a href="/contracts" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+        Contracts
+      </a>
+    </li>
+    <li>
+      <a href="/stats" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+        Stats
+      </a>
+    </li>
+  </ul>
+  
+
+  <!-- Right: Profile -->
+  <div class="ml-auto flex items-center space-x-3">
+    {% if request.user.is_authenticated %}
+      <span class="text-gray-600">{{ request.user.username }}</span>
+      <div class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm uppercase">
+        {{ request.user.username|first }}
+      </div>
+    {% endif %}
+  </div>
+</nav>
+
+
+
+  <!-- 🔥 Page Content -->
+  <main class="flex-1 px-6 py-6 max-w-screen-xl mx-auto w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>
