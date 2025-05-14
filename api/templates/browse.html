@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Browse – MixInbox{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center h-[80vh] text-center">
+  <video autoplay loop muted playsinline class="rounded-lg shadow-lg w-full max-w-2xl mb-6">
+    <source src="{% static 'videos/royalT.mp4' %}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <h1 class="text-4xl font-bold text-purple-700 mb-2">Browse Page</h1>
+  <p class="text-lg text-gray-600"> Under Construction</p>
+</div>
+{% endblock %}

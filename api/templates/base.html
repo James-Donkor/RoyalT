@@ -1,8 +1,9 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}MixDeal{% endblock %}</title>
+  <title>{% block title %}royalT{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
   <script>
@@ -12,7 +13,7 @@
         extend: {
           colors: {
             primary: '#5a4c9d',  // Custom purple
-            soft: '#e6e6ff',     // Your light purple background
+            soft: '#e6e6ff',     // Light purple background
           },
           fontFamily: {
             inter: ['Inter', 'sans-serif']
@@ -21,57 +22,99 @@
       }
     };
   </script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
   {% block extra_head %}{% endblock %}
 </head>
+
+<audio id="global-audio-player" style="display: none;"></audio>
+
 <body class="bg-gradient-to-r from-[#f4f4f8] to-[#e6e6fa] text-gray-900 min-h-screen flex flex-col font-inter">
 
-<!-- 🔥 Top Navigation Bar -->
-<nav class="bg-white shadow px-10 py-4 relative flex items-center text-sm tracking-[0.05em] font-light">
+  <!-- ✅ Dancing Bars Animation (Top Left Corner) -->
+  <img src="{% static 'images/dancing-bars.gif' %}" id="dancing-bars" style="
+    position: fixed;
+    top: 10px;
+    left: 14px;
+    width: 80px;
+    height: 50px;
+    display: none;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.95;
+  " alt="Audio Visualizer">
 
-  <!-- Centered Nav Links -->
-  <ul class="absolute left-1/2 transform -translate-x-1/2 flex space-x-24">
-    <li>
-      <a href="/browse" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
-        Browse
-      </a>
-    </li>
-    <li>
-      <a href="/messages" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
-        Messages
-      </a>
-    </li>
-    <li>
-      <a href="/contracts" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
-        Contracts
-      </a>
-    </li>
-    <li>
-      <a href="/stats" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
-        Stats
-      </a>
-    </li>
-  </ul>
-  
+  <!-- 🔥 Top Navigation Bar -->
+  <nav class="bg-white shadow px-10 py-4 relative flex items-center text-sm tracking-[0.05em] font-light">
 
-  <!-- Right: Profile -->
-  <div class="ml-auto flex items-center space-x-3">
-    {% if request.user.is_authenticated %}
-      <span class="text-gray-600">{{ request.user.username }}</span>
-      <div class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm uppercase">
-        {{ request.user.username|first }}
-      </div>
-    {% endif %}
-  </div>
-</nav>
+    <!-- Centered Nav Links -->
+    <ul class="absolute left-1/2 transform -translate-x-1/2 flex space-x-24">
+      <li>
+        <a href="/browse" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+          Browse
+        </a>
+      </li>
+      <li>
+        <a href="/messages" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+          Messages
+        </a>
+      </li>
+      <li>
+        <a href="/contracts" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+          Contracts
+        </a>
+      </li>
+      <li>
+        <a href="/stats" class="px-4 py-2 rounded-full bg-[#f9f9fc] border border-transparent hover:border-purple-600 transition duration-300 text-gray-700 text-sm tracking-[0.05em]">
+          Stats
+        </a>
+      </li>
+    </ul>
 
-
+    <!-- Right: Profile -->
+    <div class="ml-auto flex items-center space-x-3">
+      {% if request.user.is_authenticated %}
+        <span class="text-gray-600">{{ request.user.username }}</span>
+        <div class="bg-primary text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm uppercase">
+          {{ request.user.username|first }}
+        </div>
+      {% endif %}
+    </div>
+  </nav>
 
   <!-- 🔥 Page Content -->
   <main class="flex-1 px-6 py-6 max-w-screen-xl mx-auto w-full">
     {% block content %}{% endblock %}
   </main>
+
+  <!-- 🎧 Script for dynamic audio GIF playback -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const visualizer = document.getElementById('dancing-bars');
+
+      function updateVisualizerForAudio(audio) {
+        audio.addEventListener('play', () => {
+          visualizer.style.display = 'block';
+        });
+        audio.addEventListener('pause', () => {
+          visualizer.style.display = 'none';
+        });
+        audio.addEventListener('ended', () => {
+          visualizer.style.display = 'none';
+        });
+      }
+
+      const audioElements = document.querySelectorAll('audio');
+      audioElements.forEach(updateVisualizerForAudio);
+
+      // Also watch for new audio tags dynamically inserted later
+      const observer = new MutationObserver(() => {
+        document.querySelectorAll('audio').forEach(updateVisualizerForAudio);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  </script>
 
   {% block extra_js %}{% endblock %}
 </body>

@@ -18,10 +18,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = '/static/'
 
+# settings.py
+
+LOGIN_REDIRECT_URL = '/redirect/'
+
+
 # Optional if you want to collect static files later
-STATICFILES_DIRS = [
-    BASE_DIR / "static",
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 
 
@@ -34,10 +37,14 @@ SECRET_KEY = 'django-insecure-_j7cvnynjam(p9m7u#tkplrdc&d2ev))8vpk8ukgso-!&9=5u#
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://*.githubpreview.dev']
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 
 
 

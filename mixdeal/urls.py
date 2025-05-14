@@ -5,6 +5,9 @@ from mixdeal.views import CustomLoginView
 from mixdeal.views_contracts import contracts_view
 from mixdeal.views_statistics import statistics_view
 from sptracker_mixdeal_test_2025.views import get_song_by_isrc as get_spotify_data
+from api.views import post_login_redirect, select_role
+from mixdeal.views import browse_view
+
 
  # ✅ Import from new file
 
@@ -26,6 +29,11 @@ urlpatterns = [
 
     path('spotify/', include('sptracker_mixdeal_test_2025.urls')),
     path('spotify/data/', get_spotify_data, name='spotify_data'),
+
+    path('redirect/', post_login_redirect, name='post_login_redirect'),
+    path('select-role/', select_role, name='select_role'),
+
+    path('browse/', browse_view, name='browse'),
 
 
 ]

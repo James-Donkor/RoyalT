@@ -1,11 +1,13 @@
 from django.contrib.auth.views import LoginView
 from django.shortcuts import render, get_object_or_404
 from api.models import MessageThread
+from django.shortcuts import render
 
 
 
 class CustomLoginView(LoginView):
     template_name = 'login.html'
+    next_page = '/select-role/' # ✅ this ensures it works
 
     
 
@@ -23,7 +25,10 @@ def messages_view(request, thread_id=None):
         'current_thread': current_thread
     })
 
-from django.shortcuts import render
+
+def browse_view(request):
+    return render(request, 'browse.html')
+
 
 def contracts_view(request):
     dummy_contracts = [

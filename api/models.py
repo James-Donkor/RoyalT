@@ -7,13 +7,17 @@ class UserProfile(models.Model):
     ROLE_CHOICES = (
         ('client', 'Client'),
         ('engineer', 'Engineer'),
-    )
+        ('songwriter', 'Songwriter'),
+        ('producer', 'Producer'),
+        ('mixer', 'Mixer')
+)
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='client')
     bio = models.TextField(blank=True)
     profile_image = models.ImageField(upload_to='profiles/', blank=True, null=True)
     slug = models.SlugField(unique=True, blank=True)
+    is_onboarded = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

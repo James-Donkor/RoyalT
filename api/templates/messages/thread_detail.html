@@ -235,12 +235,22 @@
     document.getElementById("offerPanel").classList.toggle("hidden");
   }
   function playAudio(audioUrl, senderName) {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(err => {
+    const audioElement = document.getElementById("global-audio-player");
+    if (!audioElement) {
+      console.error("❌ Audio element not found.");
+      return;
+    }
+
+    audioElement.src = audioUrl;
+    audioElement.load();
+    audioElement.play().then(() => {
+      console.log("🎵 Playing:", audioUrl);
+    }).catch(err => {
       console.error("Audio playback failed:", err);
-      alert("Could not play audio.");
-  });
-}
+    alert("Could not play audio.");
+    });
+  }
+
 
 function simulateOfferPreview(event) {
   event.preventDefault(); // Stop default submit

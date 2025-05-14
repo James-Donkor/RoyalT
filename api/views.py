@@ -183,6 +183,37 @@ def public_profile(request, slug):
     return render(request, 'profile.html', {'profile': profile})
 
 
+@login_required
+def select_role(request):
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        selected_roles = request.POST.getlist('roles')
+        # For now, just take the first one (later, expand to support multiple roles)
+        profile.role = selected_roles[0] if selected_roles else 'client'
+        profile.is_onboarded = True
+        profile.save()
+        return redirect('messages-dashboard')
+
+    return render(request, 'select_role.html', {'profile': profile})
+
+
+@login_required
+def post_login_redirect(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    print(f"User: {request.user}")
+    print(f"UserProfile: {profile}")
+    print(f"Role: {profile.role}")
+
+
+    if not profile.role or not profile.is_onboarded:
+        return redirect('select_role')
+    
+    return redirect('messages-dashboard')  # Change to your actual dashboard route
+
+
+
+
 # 🏠 Home Page
 def home(request):
     return render(request, 'home.html')
