@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="flex bg-gray-100 min-h-screen">
+
+  <!-- Sidebar -->
+  <div class="w-1/4 bg-white border-r p-4">
+    <h2 class="text-xl font-semibold mb-4">Message Threads</h2>
+    <ul>
+      {% for thread in threads %}
+      <li class="mb-2">
+        <a href="#" class="block p-2 rounded hover:bg-gray-200 {% if thread == current_thread %}bg-blue-100{% endif %}">
+          {{ thread.subject }}<br>
+          <small class="text-gray-500">{{ thread.created_at|date:"M d, Y H:i" }}</small>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- Main Message Window -->
+  <div class="w-3/4 p-6 flex flex-col justify-between">
+    {% if current_thread %}
+    <div>
+      <h3 class="text-2xl font-bold mb-4">Conversation: {{ current_thread.subject }}</h3>
+      <div class="space-y-4">
+        {% for message in current_thread.messages.all %}
+        <div class="p-3 rounded {{ message.sender_user == request.user|yesno:'bg-blue-100,bg-gray-200' }}">
+          <div class="text-sm text-gray-600">{{ message.sender_user.username if message.sender_user else message.sender_guest.email }}</div>
+          <div class="text-gray-800">{{ message.content }}</div>
+          <div class="text-xs text-gray-400">{{ message.timestamp|date:"M d, Y H:i" }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Message Form (Placeholder only) -->
+    <form method="post" class="mt-6">
+      {% csrf_token %}
+      <textarea name="content" rows="3" class="w-full p-2 border rounded mb-2" placeholder="Type your message..."></textarea>
+      <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send</button>
+    </form>
+    {% else %}
+    <p class="text-gray-600">No threads yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+<!--messages.html in templates NOT the messages folder-->

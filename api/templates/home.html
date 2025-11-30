@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ profile.display_name }}</title>
+</head>
+<body>
+    <h1>🎧 {{ profile.display_name }}</h1>
+    <p>{{ profile.bio }}</p>
+
+    <h2>Send a message to {{ profile.display_name }}</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="Your name" required><br>
+        <input type="email" name="email" placeholder="Your email"><br>
+        <textarea name="message" rows="4" placeholder="Write your message..." required></textarea><br>
+        <button type="submit">Send Message</button>
+    </form>
+</body>
+</html>
+<!--home.html-->
